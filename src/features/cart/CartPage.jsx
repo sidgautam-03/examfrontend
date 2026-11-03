@@ -41,7 +41,8 @@ export default function CartPage() {
     if (Object.keys(errs).length) return
 
     const body = {
-      customer: { name: customer.name.trim(), email: customer.email.trim() },
+      customerName: customer.name.trim(),
+      customerEmail: customer.email.trim(),
       items: items.map((i) => ({ productId: i.productId, quantity: i.quantity })),
     }
     const key = keyFor(body)
@@ -168,10 +169,10 @@ export default function CartPage() {
             {formError}
           </p>
         )}
-        <FormField label="Name" error={errors.name ?? errors['customer.name']}>
+        <FormField label="Name" error={errors.name ?? errors.customerName}>
           <input value={customer.name} onChange={(e) => setCustomer((c) => ({ ...c, name: e.target.value }))} />
         </FormField>
-        <FormField label="Email" error={errors.email ?? errors['customer.email']}>
+        <FormField label="Email" error={errors.email ?? errors.customerEmail}>
           <input type="email" value={customer.email} onChange={(e) => setCustomer((c) => ({ ...c, email: e.target.value }))} />
         </FormField>
         <button type="submit" className="primary" disabled={submitting}>

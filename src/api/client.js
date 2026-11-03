@@ -35,16 +35,18 @@ function toFieldErrors(raw) {
   return out
 }
 
+// The API answers { success: true, data, meta? } or { success: false, error: { code, message, details } }.
 export function normalizeError(err) {
   const res = err.response
   const body = res?.data
+  const apiError = body?.error && typeof body.error === 'object' ? body.error : body
   const message =
-    (typeof body === 'object' && (body?.message || body?.error)) ||
+    (typeof apiError === 'object' && (apiError?.message || (typeof apiError?.error === 'string' && apiError.error))) ||
     (res ? `Request failed (${res.status})` : 'Network error. Please check your connection.')
   return Object.assign(new Error(typeof message === 'string' ? message : 'Request failed'), {
     status: res?.status ?? 0,
-    code: body?.code,
-    fieldErrors: toFieldErrors(body?.errors ?? body?.details ?? body?.fieldErrors),
+    code: apiError?.code,
+    fieldErrors: toFieldErrors(apiError?.details ?? apiError?.errors ?? apiError?.fieldErrors),
     data: body,
     isApiError: true,
   })
@@ -58,7 +60,14 @@ client.interceptors.request.use((config) => {
 })
 
 client.interceptors.response.use(
-  (res) => res,
+  (res) => {
+    const body = res.data
+    if (body && typeof body === 'object' && body.success === true && 'data' in body) {
+      // Lists come back as data: [...] with paging in meta; expose them as { items, ...meta }.
+      res.data = Array.isArray(body.data) ? { items: body.data, ...body.meta } : body.data
+    }
+    return res
+  },
   (err) => {
     if (axios.isCancel(err)) return Promise.reject(err)
     const apiErr = normalizeError(err)

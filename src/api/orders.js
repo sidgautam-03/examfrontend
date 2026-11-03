@@ -40,7 +40,8 @@ export const updateOrderStatus = (id, status) =>
 
 // Pulls [{productId, available, requested}] out of a 409 body, whatever key the API uses.
 export function extractStockConflicts(data) {
-  const list = data?.items ?? data?.insufficient ?? data?.unavailable ?? data?.details ?? data?.errors ?? []
+  const body = data?.error && typeof data.error === 'object' ? data.error : data
+  const list = body?.items ?? body?.insufficient ?? body?.unavailable ?? body?.details ?? body?.errors ?? []
   if (!Array.isArray(list)) return []
   return list
     .map((i) => ({
